@@ -9,12 +9,22 @@ const path = require("path");
 const AuthService = require("./services/authService");
 const messageHandler = require("./utils/serverMessageHandler");
 const functions = require("firebase-functions");
+const https = require("https")
 
 const app = express();
-const BASE_URL = process.env.BASE_URL || "http://localhost";
+const BASE_URL = process.env.BASE_URL || "https://www.api.isve.se";
+
+const options = {
+    key: fs.readFileSync(''),
+    cert: fs.readFileSync(''),
+}
+
+
 
 app.use(cors());
 app.use(express.json());
+
+
 
 // Google authentication routes
 app.get(`/${process.env.AUTH_GOOGLE_URL}`, (req, res) => {
@@ -54,20 +64,21 @@ module.exports = {app}
 // Export the app for Firebase Functions
 exports.api = functions.https.onRequest(app);
 
-// Start server only for local development
 if (require.main === module) {
-    const PORT = process.env.SERVER_PORT || 3001; // Use a default for local development
-    const server = app.listen(PORT, () => {
-        const serverMessage = {
-            origin: "APP_STARTUP",
-            server_message: `Server is running on: ${BASE_URL}:${PORT}`,
-            server_status: "OK",
-            server_status_code: 200,
-            endpoint: "SERVER",
-            in_progress: false,
-        };
+const server = https.createServer(options, (res, req) => {
 
-        console.log("Server Message:", serverMessage);
-        messageHandler.newServerMessage_Handler(serverMessage);
-    });
+    const PORT = process.env.SERVER_PORT || 443; // Use a default for local development
+    const serverMessage = {
+        origin: "APP_STARTUP",
+        server_message: `Server is running on: ${BASE_URL}:${SERVER_PORT}`,
+        server_status: "OK",
+        server_status_code: 200,
+        endpoint: "SERVER",
+        in_progress: false,
+    };
+
+    console.log("Server Message:", serverMessage);
+    messageHandler.newServerMessage_Handler(serverMessage);
+}).listen(SERVER_PORT)
+
 }
