@@ -1,4 +1,4 @@
-const app = require("../server"); // Import your express app
+const app = require("../../server"); // Import your express app
 
 exports.handler = async (event, context) => {
     // You can access query parameters and body from event
