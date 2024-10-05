@@ -1,0 +1,58 @@
+// tests/googleApi.test.js
+
+const request = require('supertest'); // For making HTTP requests in tests
+const app = require('../server'); // Import your server
+const AuthService = require('../services/authService'); // Import AuthService
+
+describe('Google API Authentication Endpoints', () => {
+    let server; // To hold the server instance
+
+    beforeAll(async () => {
+        // Start the server
+        server = app.listen(process.env.PORT || 3001, () => {
+            console.log('Test server running...');
+        });
+    });
+
+    afterAll(async () => {
+        // Close the server after tests
+        await new Promise((resolve) => server.close(resolve));
+        console.log('Test server closed');
+    });
+
+    it('should redirect to Google Auth URL', async () => {
+        // Mock the AuthService.getAuthUrl method to return a test URL
+        jest.spyOn(AuthService, 'getAuthUrl').mockReturnValue('https://example.com/auth');
+
+        const response = await request(server)
+            .get(`/${process.env.AUTH_GOOGLE_URL}`)
+            .expect(302); // Expect a redirect status code
+
+        expect(response.headers.location).toBe('https://example.com/auth'); // Check the redirect URL
+    });
+
+    it('should retrieve tokens on callback', async () => {
+        // Mock the AuthService.getTokens method to simulate token retrieval
+        jest.spyOn(AuthService, 'getTokens').mockResolvedValue({
+            access_token: 'mockAccessToken',
+            refresh_token: 'mockRefreshToken',
+        });
+
+        const response = await request(server)
+            .get(`/${process.env.OAUTH2_CALLBACK_URL}?code=mockCode`) // Simulate a query with a code
+            .expect(200); // Expect a success status code
+
+        expect(response.text).toBe('Authentication successful! Tokens retrieved.'); // Check response message
+    });
+
+    it('should handle token retrieval error', async () => {
+        // Mock an error for token retrieval
+        jest.spyOn(AuthService, 'getTokens').mockRejectedValue(new Error('Token retrieval failed'));
+
+        const response = await request(server)
+            .get(`/${process.env.OAUTH2_CALLBACK_URL}?code=mockCode`)
+            .expect(500); // Expect an error status code
+
+        expect(response.text).toBe('Error retrieving tokens'); // Check error message
+    });
+});

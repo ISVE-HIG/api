@@ -1,0 +1,60 @@
+// tests/server.test.js
+
+const request = require('supertest');
+const express = require('express');
+const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
+const server = require('../server.js'); // Adjust the path based on your project structure
+const AuthService = require('../services/authService'); // Import AuthService
+
+dotenv.config(); // Load environment variables
+
+describe('API Tests', () => {
+  // Test for Google authentication URL
+  it('should redirect to Google authentication URL', async () => {
+    const response = await request(server)
+      .get(`/${process.env.AUTH_GOOGLE_URL}`)
+      .expect(302); // Expect a redirect
+
+    // Validate the Location header contains the URL
+    const redirectUrl = response.headers.location;
+    expect(redirectUrl).toBeDefined();
+    expect(redirectUrl).toMatch(/https:\/\/accounts\.google\.com/); // Adjust based on expected redirect
+  });
+
+  // Test for OAuth2 callback
+  it('should retrieve tokens and respond with success message', async () => {
+    // Mock the AuthService.getTokens method
+    jest.spyOn(AuthService, 'getTokens').mockResolvedValue({
+      access_token: 'mock_access_token',
+      refresh_token: 'mock_refresh_token'
+    });
+
+    const response = await request(server)
+      .get(`/${process.env.OAUTH2_CALLBACK_URL}`)
+      .query({ code: 'mock_code' })
+      .expect(200); // Expect a success response
+
+    expect(response.text).toBe('Authentication successful! Tokens retrieved.');
+
+    // Check if tokens were written to the .env file (use a mock filesystem library in a real test)
+    const envPath = path.join(__dirname, '../.env');
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    expect(envContent).toContain('ACCESS_TOKEN=mock_access_token');
+    expect(envContent).toContain('REFRESH_TOKEN=mock_refresh_token');
+  });
+
+  // Optionally, you can add more tests to check error handling, etc.
+  it('should return an error if tokens retrieval fails', async () => {
+    // Mock the AuthService.getTokens method to throw an error
+    jest.spyOn(AuthService, 'getTokens').mockRejectedValue(new Error('Token retrieval error'));
+
+    const response = await request(server)
+      .get(`/${process.env.OAUTH2_CALLBACK_URL}`)
+      .query({ code: 'mock_code' })
+      .expect(500); // Expect an error response
+
+    expect(response.text).toBe('Error retrieving tokens');
+  });
+});

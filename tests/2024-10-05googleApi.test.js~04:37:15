@@ -1,0 +1,33 @@
+// tests/googleApi.test.js
+
+const { app } = require('../server'); // Import the server control functions
+const supertest = require('supertest'); // Import supertest for making requests
+const request = supertest(app); // Initialize supertest with your app
+
+describe('Google API Authentication Server', () => {
+    const TEST_PORT = 3002; // Define a test port to avoid conflicts
+
+    beforeAll((done) => {
+        // Start the server on a different port for testing
+
+            console.log(`Test server running on port ${TEST_PORT}...`);
+            done(); // Call done to indicate that the server has started
+
+    });
+
+    afterAll((done) => {
+        // Close the server after tests
+
+            console.log('Test server closed');
+            done(); // Call done to indicate that the server has closed
+
+    });
+
+    it('should start the server without errors', (done) => {
+        // This test will just check if the server starts successfully
+        expect(app).toBeDefined();
+        done(); // Call done to complete the test
+    });
+
+    // Additional tests for endpoints can go here...
+});

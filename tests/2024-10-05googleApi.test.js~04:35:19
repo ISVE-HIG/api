@@ -1,0 +1,39 @@
+const request = require("supertest");
+const { app } = require("../server"); // Import the app
+let server;
+
+// Start the server before tests
+beforeAll((done) => {
+    server = app.listen(3001, () => {
+        console.log("Test server running...");
+        done();
+    });
+});
+
+// Close the server after tests
+afterAll((done) => {
+    server.close(() => {
+        console.log("Test server closed");
+        done();
+    });
+});
+
+// Test for Google Auth URL redirection
+test("should redirect to Google Auth URL", async () => {
+    const response = await request(server).get(`/${process.env.AUTH_GOOGLE_URL}`);
+    expect(response.status).toBe(302); // Check for redirect status
+});
+
+// Test for token retrieval callback
+test("should retrieve tokens on callback", async () => {
+    const mockCode = "mock_code"; // You should provide a valid code for testing
+    const response = await request(server).get(`/${process.env.OAUTH2_CALLBACK_URL}?code=${mockCode}`);
+    expect(response.text).toBe("Authentication successful! Tokens retrieved.");
+});
+
+// Handle token retrieval error
+test("should handle token retrieval error", async () => {
+    const invalidCode = "invalid_code"; // Use an invalid code to trigger error
+    const response = await request(server).get(`/${process.env.OAUTH2_CALLBACK_URL}?code=${invalidCode}`);
+    expect(response.status).toBe(500);
+});

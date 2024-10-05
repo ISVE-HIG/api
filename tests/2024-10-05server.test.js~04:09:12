@@ -1,0 +1,43 @@
+const messageHandler = require('../utils/serverMessageHandler'); // Adjust the path as needed
+const app = require('../server'); // Your server module
+const PORT = 3001;
+const BASE_URL = "http://localhost";
+
+describe('Server Startup Tests', () => {
+    let server;
+
+    // Start the server before running the tests
+    beforeAll((done) => {
+        server = app.listen(PORT, () => {
+            console.log(`Test server running on ${BASE_URL}:${PORT}`);
+            done();
+        });
+    });
+
+    test('Server should log the startup message correctly', (done) => {
+        const serverMessage = {
+            origin: "APP_STARTUP",
+            server_message: `Server is running on: ${BASE_URL}:${PORT}`,
+            server_status: "OK",
+            server_status_code: 200,
+            endpoint: "SERVER",
+            in_progress: false
+        };
+
+        // Validate that the handler processes the message without errors
+        try {
+            messageHandler.newServerMessage_Handler(serverMessage);
+            done();
+        } catch (error) {
+            done(error);
+        }
+    });
+
+    // Shut down the server after tests complete
+    afterAll((done) => {
+        server.close(() => {
+            console.log('Test server closed');
+            done();
+        });
+    });
+});
