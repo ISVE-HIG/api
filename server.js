@@ -24,7 +24,9 @@ const options = {
 app.use(cors());
 app.use(express.json());
 
-
+app.get('/', (req, res) => {
+    res.send('<h1>Welcome to My Node.js App!</h1>');
+});
 
 // Google authentication routes
 app.get(`/${process.env.AUTH_GOOGLE_URL}`, (req, res) => {
